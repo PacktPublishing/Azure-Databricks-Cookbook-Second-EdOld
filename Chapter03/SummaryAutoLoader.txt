@@ -1,0 +1,28 @@
+from pyspark.sql import SparkSession
+
+# Create a SparkSession
+spark = SparkSession.builder.appName("AutoLoaderExample").getOrCreate()
+
+# Define the Auto Loader table
+table_name = "my_table"
+table_schema = "C_CUSTKEY INT, C_NAME STRING, C_ADDRESS STRING, C_NATIONKEY INT, C_PHONE STRING, C_ACCTBAL DOUBLE, C_MKTSEGMENT STRING, C_COMMENT STRING"
+
+# Create the Auto Loader table
+spark.sql(f"CREATE TABLE IF NOT EXISTS {table_name} USING csv OPTIONS (path '', header 'true', schema '{table_schema}')")
+
+# Load the initial data
+initial_file = "part-00000-tid-3200334632332214470-9b4dec79-7e2e-495d-8657-3b5457ed3753-108-1-c000.csv"
+spark.read.format("csv").option("header", "true").schema(table_schema).load(initial_file).write.insertInto(table_name)
+
+# Configure Auto Loader options
+spark.sql(f"ALTER TABLE {table_name} SET OPTIONS (path '/path/to/csv/files/*', maxFilesPerTrigger '1', ignoreLeadingWhiteSpace 'true')")
+
+# Process incremental data
+incremental_data = spark.table(table_name)
+# Perform necessary transformations or analysis on the incremental_data DataFrame
+
+# Schedule the incremental loading process (optional)
+# Set up a Databricks Job or external scheduling mechanism to trigger the script at desired intervals
+
+# Stop the SparkSession
+spark.stop()
